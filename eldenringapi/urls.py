@@ -17,7 +17,11 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path
+from eldenringapi.api.views import *
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path('api/twitch-session/', TwitchSessionView.as_view(), name='twitch-session'),
+    path('api/game-data/<str:session_code>/', GameDataView.as_view(), name='game-data'),
+    path('api/upload-save/<str:session_code>/', UploadSaveView.as_view(), name='upload-save')
 ]
