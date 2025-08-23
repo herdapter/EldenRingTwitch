@@ -1,0 +1,48 @@
+Elden Ring Parser - Commandes de test (Django + Celery + Parser Node)
+
+# Prérequis Python (dans le repo)
+cd /Users/enee/devromain/EldenRingTwitch
+source env/bin/activate
+pip install -r eldenringapi/requirements_elden_addition.txt
+
+# Lancer le service Parser Node (Docker Compose)
+# Ce service écoute sur http://localhost:3001 par défaut
+docker compose -f /Users/enee/devromain/EldenRingTwitch/eldenringapi/docker-compose.yml up -d elden-parser
+
+# (Optionnel) Lancer Redis si vous voulez tester en asynchrone avec un worker Celery
+# Local (Docker Compose)
+docker compose -f /Users/enee/devromain/EldenRingTwitch/eldenringapi/docker-compose.yml up -d redis
+
+# Lancer le serveur Django (pour tester les endpoints REST si besoin)
+cd /Users/enee/devromain/EldenRingTwitch
+env/bin/python manage.py runserver 0.0.0.0:8000
+
+# Lancer un worker Celery (UNIQUEMENT si vous testez en asynchrone, sans --sync)
+# Assurez-vous que Redis tourne si vous utilisez ce mode
+cd /Users/enee/devromain/EldenRingTwitch
+env/bin/celery -A eldenringapi worker -l info
+
+# TEST 1: Parsing SYNCHRONE (ne nécessite pas de worker Celery)
+# Remplacez le chemin vers votre save .sl2 si besoin
+cd /Users/enee/devromain/EldenRingTwitch
+env/bin/python manage.py parse_save /Users/enee/devromain/EldenRingTwitch/ER0000.sl2 --session local-test --sync
+
+# TEST 2: Parsing ASYNCHRONE (nécessite Redis + worker Celery)
+cd /Users/enee/devromain/EldenRingTwitch
+env/bin/python manage.py parse_save /Users/enee/devromain/EldenRingTwitch/ER0000.sl2 --session local-test
+# Surveillez les logs du worker pour voir le résultat
+
+# TEST 3: Envoi via endpoint HTTP (simule l’envoi par l’app Rust)
+# Nécessite le serveur Django en cours d’exécution
+curl -X POST -F "file=@/Users/enee/devromain/EldenRingTwitch/ER0000.sl2" http://127.0.0.1:8000/api/upload-save/local-test/
+
+# (Optionnel) Vérifier les données sauvegardées
+curl http://127.0.0.1:8000/api/game-data/local-test/
+
+
+Notes:
+- La task Celery utilisée est eldenringapi/api/tasks.py::analyze_save_file, qui envoie le fichier au service Node (elden_parser_service) via services/EldenRingParser.
+- ELDEN_PARSER_URL par défaut: http://localhost:3001. En Docker Compose (service web), la variable est définie à http://elden-parser:3001.
+- Le cache Django utilise REDIS_URL (défini dans settings_elden_addition.py). Celery utilise le broker défini dans settings.py (redis://localhost:6379/0 par défaut).
+- Les données sont stockées dans le modèle GameData, liées à TwitchSession par son code (session_code).
+- En mode --sync, pas besoin de Redis ni de worker; la commande exécute la task directement et affiche l’état.

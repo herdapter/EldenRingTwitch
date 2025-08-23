@@ -1,7 +1,8 @@
 from rest_framework import status
-from .serializer import *
+from .serializers import *
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from .models import GameData
 import tempfile
 import os
 
@@ -23,9 +24,7 @@ class TwitchSessionView(APIView):
 class GameDataView(APIView):
 
     def get(self, request, session_code, *args, **kwargs):
-        game_data = GameData.objects.filter(
-            twitch_id__code=session_code
-        )
+        game_data = GameData.objects.filter(twitch_id__code=session_code).first()
 
         if not game_data:
             return Response(
