@@ -1,7 +1,7 @@
 from django.db import models
 
 class TwitchSession(models.Model):
-    code = models.CharField(max_length=255)
+    code = models.CharField(max_length=255, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
 class GameData(models.Model):

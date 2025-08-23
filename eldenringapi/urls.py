@@ -18,10 +18,15 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from eldenringapi.api.views import *
+from .views_elden import EldenSaveUploadView, character_progression, parser_health
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path('api/twitch-session/', TwitchSessionView.as_view(), name='twitch-session'),
     path('api/game-data/<str:session_code>/', GameDataView.as_view(), name='game-data'),
-    path('api/upload-save/<str:session_code>/', UploadSaveView.as_view(), name='upload-save')
+    path('api/upload-save/<str:session_code>/', UploadSaveView.as_view(), name='upload-save'),
+    # Elden Ring example endpoints (merged from urls_elden_example.py)
+    path('api/elden/upload/', EldenSaveUploadView.as_view(), name='elden_upload'),
+    path('api/elden/character/<int:slot_index>/', character_progression, name='character_progression'),
+    path('api/elden/health/', parser_health, name='parser_health'),
 ]
